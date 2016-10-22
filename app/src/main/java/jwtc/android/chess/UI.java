@@ -4,6 +4,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import jwtc.chess.*;
 import jwtc.chess.board.*;
 
@@ -14,8 +18,9 @@ public class UI extends GameControl {
 
 	// last mouse click position
 	protected int m_iFrom;
-	
-	
+
+	String engineValuePast;
+
 	// searchthread message handling
 	public static final int MSG_MOVE = 1;
 	public static final int MSG_UCI_MOVE = 2;
@@ -219,6 +224,9 @@ public class UI extends GameControl {
 	@Override
 	public void sendMessageFromThread(String sText)
 	{
+		Log.i(TAG, "sendMessageFromThread Jeroen engine");
+		engineEvaluation(sText);
+
 		Message m = new Message();
 		Bundle b = new Bundle();
 		m.what = MSG_TEXT;
@@ -226,6 +234,28 @@ public class UI extends GameControl {
 		m.setData(b);
 		m_searchThreadUpdateHandler.sendMessage(m);
 	}
+
+	public void engineEvaluation(String sText){
+		Log.d(TAG, " engineEvaluation sText ->" + sText);
+
+		//Engine will give a positive number (winning) on the side it is evaluating for, regardless of color
+
+		Pattern pat = Pattern.compile("(\\w+) \\w+ .+\\s+(-?\\d+\\.\\d\\d)");  // gets 2nd move and engine value
+		Matcher mat = pat.matcher(sText);
+
+		while (mat.find()){
+			String engineValue = mat.group(2);
+			if (engineValuePast == null){engineValuePast = engineValue;}
+			Float f_engineValueDiff = Float.valueOf(engineValue) - Float.valueOf(engineValuePast);
+
+			if (f_engineValueDiff > 1){
+				Log.d(TAG, "#### f_engineValueDiff ->" + f_engineValueDiff + " first move ->" + mat.group(1) + "  sText->" + sText);
+			}
+			Log.d(TAG, "f engValDiff ->" + f_engineValueDiff + "   engineValuePast ->" + engineValuePast + "   engineValueCurrent ->" + engineValue);
+			engineValuePast = engineValue;
+		}
+	}
+
 	@Override
 	public void sendMoveMessageFromThread(int move){
 		Message m = new Message();
@@ -235,8 +265,10 @@ public class UI extends GameControl {
 		m.setData(b);
 		m_searchThreadUpdateHandler.sendMessage(m);
 	}
+
 	@Override
 	public void sendUCIMoveMessageFromThread(int from, int to, int promo){
+		Log.i(TAG, "sendUCIMoveMessageFromThread UCIEngine");
 		Message m = new Message();
 		Bundle b = new Bundle();
 		b.putInt("from", from);

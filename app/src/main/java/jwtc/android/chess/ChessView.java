@@ -20,6 +20,9 @@ import jwtc.chess.board.ChessBoard;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
@@ -58,7 +61,7 @@ public class ChessView extends UI {
     private RelativeLayout _layoutHistory;
     private ArrayList<PGNView> _arrPGNView;
     private LayoutInflater _inflater;
-    private boolean _bAutoFlip, _bShowMoves, _bShowLastMove, _bPlayAsBlack, _bDidResume, _bPlayVolume;
+    private boolean _bAutoFlip, _bShowMoves, _bShowLastMove, _bPlayAsBlack, _bDidResume, _bPlayVolume, _bBlunderAlert;
     private Timer _timer;
     private ViewSwitcher _switchTurnMe, _switchTurnOpp;
     private SeekBar _seekBar;
@@ -1115,6 +1118,7 @@ public class ChessView extends UI {
         editor.putInt("level", _selectedLevel);
         editor.putInt("levelPly", _selectedLevelPly);
         editor.putInt("playMode", _playMode);
+        editor.putBoolean("blunderAlert", _bBlunderAlert);
         editor.putBoolean("autoflipBoard", _bAutoFlip);
         editor.putBoolean("showMoves", _bShowMoves);
         editor.putBoolean("playAsBlack", _bPlayAsBlack);
@@ -1146,7 +1150,7 @@ public class ChessView extends UI {
             if (f.exists()) {
                 _uci.init(sEnginePath);
                 if (_tvEngine != null) {
-                    _tvEngine.setText("UCI engine " + sEngine);
+                    _tvEngine.setText("UCI engine: " + sEngine);
                 } else {
                     Log.w("ChessView", "Could not init engine");
                 }
@@ -1165,6 +1169,7 @@ public class ChessView extends UI {
         _selectedLevel = prefs.getInt("level", 2);
         _selectedLevelPly = prefs.getInt("levelPly", 2);
         _playMode = prefs.getInt("playMode", HUMAN_PC);
+        _bBlunderAlert = prefs.getBoolean("blunderAlert", true);
 
         if (prefs.getBoolean("onLoadJumpToLastMove", false)) {
 

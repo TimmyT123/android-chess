@@ -25,6 +25,8 @@ import jwtc.chess.board.BoardConstants;
 
 public class GameControl
 {
+	private static final String TAG = "GameControl";
+
 	// active - is control allowed
 	protected boolean m_bActive;
 	protected int m_iLevelMode;
@@ -316,6 +318,7 @@ try{
 	{
 		//Log.i("GameControl", "play() called");
 		if(_uci.isReady()){
+			Log.d(TAG,  "UCI is ready");
 			if(getLevelMode() == LEVEL_PLY){
 				_uci.play(0, getLevelPly());
 			} else {
@@ -323,6 +326,8 @@ try{
 				_uci.play(secs[getLevel()] * 1000, 0);
 			}
 		} else {
+			Log.d(TAG, "UCI is not ready");
+			// searchThread for Jeroen's engine
 			m_searchThread = new Thread(new SearchAlgorithmRunner(this));
 			m_searchThread.start();
 		}

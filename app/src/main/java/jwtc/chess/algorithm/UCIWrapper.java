@@ -2,6 +2,7 @@ package jwtc.chess.algorithm;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -18,7 +19,7 @@ import jwtc.chess.Pos;
 public class UCIWrapper {
 
     protected GameControl m_control;
-    private BufferedReader _reader;//, _readerError;
+    private BufferedReader _reader, _readerError;
     private PrintWriter _writer;
     private Process _process;
 
@@ -39,20 +40,23 @@ public class UCIWrapper {
 
 
         try {
-            Log.i(TAG, "intitializing " + sEnginePath);
+            Log.i(TAG, "initializing " + sEnginePath);
             // Executes the command.
             _process = Runtime.getRuntime().exec(sEnginePath);
 
             // Reads stdout.
             _reader = new BufferedReader(new InputStreamReader(_process.getInputStream()));
-            //_readerError = new BufferedReader(new InputStreamReader(_process.getErrorStream()));
+            _readerError = new BufferedReader(new InputStreamReader(_process.getErrorStream()));
             _writer = new PrintWriter(new OutputStreamWriter(_process.getOutputStream()));
+
+            runConsole("/system/bin/chmod 744 /data/data/jwtc.android.chess/" + sEnginePath);
+            runConsole("/system/bin/ls -la /data/data/jwtc.android.chess/");
 
             new Thread(new Runnable() {
                 public void run() {
 
                     Matcher match;
-                    String tmp;
+                    String tmp = "";
                     int from, to, iPos, iLine = 0;
                     try {
 
@@ -63,6 +67,8 @@ public class UCIWrapper {
                         int i = 0;
 
                         while (true) {
+                            //here, you have null pointer for tmp;
+                            // in my opinion, you have omitted something for initialize of _reader
                             tmp = _reader.readLine();
 
                             Log.i(TAG, iLine + ">>" + tmp);
@@ -78,16 +84,14 @@ public class UCIWrapper {
                                     tmp = "";
                                     for (int j = 0; j < arr.length; j++) {
 
-                                        if (arr[j].equals("depth")) {
-                                            tmp += arr[j] + " " + arr[j + 1] + "\t";
-                                        } else if (arr[j].equals("nodes")) {
-                                            tmp += arr[j] + " " + arr[j + 1] + "\t";
-                                        } else if (arr[j].equals("nps")) {
-                                            tmp += arr[j] + " " + arr[j + 1] + "\t";
-                                        }
-                                        if (arr[j].equals("depth")) {
-
-                                            //TODO
+                                        switch (arr[j]){
+                                            case "depth": case "nodes": case "nps":
+                                                tmp += arr[j] + " " + arr[j + 1] + "\t";
+                                                break;
+                                            case "cp":
+                                                // arr[j + 1] is the value of cp
+                                                tmp += arr[j] + " " + arr[j + 1] + "\t";
+                                                break;
                                         }
 
                                     }
@@ -97,6 +101,7 @@ public class UCIWrapper {
                                 }
                                 i++;
                             } else {
+                                Log.i(TAG, "tmp ->" + tmp);
                                 iPos = tmp.indexOf("bestmove");
                                 //Log.i(TAG, "bestmove = " + iPos);
                                 if (iPos >= 0) {
@@ -107,7 +112,7 @@ public class UCIWrapper {
                                     if (iPos > 0) {
                                         tmp = tmp.substring(0, iPos);
                                     }
-                                    Log.i(TAG, tmp);
+                                    Log.i(TAG, "bestmove = " + tmp);
                                     match = _pattMove.matcher(tmp);
                                     if (match.matches()) {
 
@@ -125,6 +130,10 @@ public class UCIWrapper {
                         }
                     } catch (Exception ex) {
                         if (_process != null) {
+                            try {
+                                Log.e(TAG, "uci error: " + _readerError.readLine());
+                            } catch (IOException e) {}
+
                             _process.destroy();
                             _process = null;
                         }
@@ -137,6 +146,7 @@ public class UCIWrapper {
 
         } catch (Exception e) {
             Log.e(TAG, "init error: " + e);
+            Log.e(TAG, "communication problem with " + sEnginePath);
         }
     }
 
@@ -219,6 +229,7 @@ public class UCIWrapper {
             return output.toString();
 
         } catch (Exception e) {
+            Log.e(TAG, "run console command error ->" + e.getMessage());
             return null;
         }
     }

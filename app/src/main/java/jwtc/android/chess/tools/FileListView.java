@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,7 +21,8 @@ import jwtc.android.chess.MyBaseActivity;
 import jwtc.android.chess.R;
 import jwtc.android.chess.iconifiedlist.*;
 
-public class FileListView extends ListActivity { 
+public class FileListView extends ListActivity {
+	private static final String TAG = "FileListView";
 		
 	private File currentDirectory = new File("/");
 	private List<IconifiedText> directoryEntries = new ArrayList<IconifiedText>();
